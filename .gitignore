@@ -1,0 +1,8 @@
+# Environment variables
+.env
+
+# Sensitive files — the "\#" escapes the hash so git doesn't treat it as a comment
+\# VvXLOmqMgrZZmXtZ.txt
+
+# Dependencies
+node_modules/
