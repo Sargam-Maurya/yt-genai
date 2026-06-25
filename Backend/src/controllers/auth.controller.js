@@ -1,0 +1,166 @@
+const userModel =  require("../models/user.model")
+const bcrypt = require("bcryptjs")
+const jwt = require("jsonwebtoken")
+const tokenBlackListModel = require("../models/blacklist.model")
+
+
+
+/**
+ * @name registerUserController
+ * @description register a new user, expects username, email and password in the request body
+ * @access Public
+ */
+
+async function registerUserController(req, res){
+
+    const {username, email, password} = req.body
+
+    if(!username || !email || !password) {
+        return res.status(400).json({message: 'Please provide username, email  and password'})
+    }
+    
+    const isUserAlreadyExists = await userModel.findOne({
+        $or: [ {username}, {email} ]
+    })
+
+    if(isUserAlreadyExists){
+        return res.status(400).json({
+            message: "Account already exists with this email address or username"
+        })
+    }
+
+   /**
+    * @name hash the password before saving to database
+    * @description we are using bcryptjs to hash the password, you can use any other library as well                                        
+    * second parameter is the salt rounds, you can increase it for better security but it will also increase the time taken to hash the password
+    */
+     
+    const hash = await bcrypt.hash(password, 10)
+
+    const user = await userModel.create({
+        username,
+        email,
+        password: hash
+    })
+
+    /*
+        * @name generate a jwt token for the user
+        * @description we are using jsonwebtoken to generate a jwt token, you can use any other library as well
+        * second parameter is the secret key, you can use any other secret key as well
+        * third parameter is the options, we are setting the token to expire in 30 days
+    */
+    const token = jwt.sign(
+        {id: user._id, username: user.username},
+        process.env.JWT_SECRET,
+        {expiresIn: '30d'}
+    )
+
+    /**
+     * @name set the token in the cookie
+     * @description we are using res.cookie to set the token in the cookie, you can use any other library as well
+     * second parameter is the token, you can use any other token as well
+     * third parameter is the options, we are setting the cookie to expire in 30 days   
+     */
+
+    res.cookie("token", token)
+
+    /**
+     * @name send the response to the client
+     * @description we are sending the response to the client with the user details and the token   
+     */
+
+    res.status(201).json({
+        message: "User registered successfully",
+        user: {
+            id: user._id,
+            username: user.username,
+            email: user.email
+        }
+    })
+}
+
+/**
+ * @name loginUserController
+ * @description login a user with email and password
+ * @access Public
+ */
+
+async function loginUserController(req, res) {
+    const {email, password } = req.body
+
+    const user = await userModel.findOne({email})
+
+    if(!user) {
+        res.status(400).json({
+            message: "Invalid email or password"
+        })
+    }
+    
+    const isPasswordValid = await bcrypt.compare(password, user.password)
+
+    if(!isPasswordValid) {
+        return res.status(400).json({
+            message: "Invalid email or password"
+        })
+    }
+
+    const token  = jwt.sign(
+        {id: user._id, username: user.username},
+        process.env.JWT_SECRET,
+        {expiresIn: '30d'}
+    )
+
+    res.cookie("token", token)
+
+    res.status(200).json({
+        message: "User Logged in successfully",
+        user: {
+            id: user._id,
+            username: user.username,
+            email: user.email
+        }
+    })
+}
+
+/**
+ * @name logoutUserController
+ * @description logout a user and add the token to the blacklist
+ * @access Public
+ */
+
+
+async function logoutUserController(req, res){
+    const token = req.cookies.token
+    
+
+    if(token){
+        await tokenBlackListModel.create({token})
+    }
+
+    res.clearCookie("token")
+
+    res.status(200).json({
+        message: "User logged out Successfully"
+    })
+}
+
+/**
+ * @name getMeController
+ * @description get the details of the logged-in user
+ * @access Private
+ */
+
+async function getMeController(req, res){
+   const user = await userModel.findById(req.user.id)
+
+   res.status(200).json({
+    message: "User details fetched Successfully",
+    user:{
+        id:user._id,
+        username: user.username,
+        email:user.email
+    }
+   })
+}
+
+module.exports = {registerUserController, loginUserController, logoutUserController, getMeController}
