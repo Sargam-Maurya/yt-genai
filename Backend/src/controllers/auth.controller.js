@@ -91,7 +91,7 @@ async function loginUserController(req, res) {
     const user = await userModel.findOne({email})
 
     if(!user) {
-        res.status(400).json({
+        return  res.status(400).json({
             message: "Invalid email or password"
         })
     }
