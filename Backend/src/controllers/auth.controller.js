@@ -62,7 +62,13 @@ async function registerUserController(req, res){
      * third parameter is the options, we are setting the cookie to expire in 30 days   
      */
 
-    res.cookie("token", token)
+    const cookieOptions = {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    }
+    res.cookie("token", token, cookieOptions)
 
     /**
      * @name send the response to the client
@@ -110,7 +116,13 @@ async function loginUserController(req, res) {
         {expiresIn: '30d'}
     )
 
-    res.cookie("token", token)
+    const cookieOptions = {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    }
+    res.cookie("token", token, cookieOptions)
 
     res.status(200).json({
         message: "User Logged in successfully",
@@ -137,7 +149,11 @@ async function logoutUserController(req, res){
         await tokenBlackListModel.create({token})
     }
 
-    res.clearCookie("token")
+    res.clearCookie("token", {
+      httpOnly: true,
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+      secure: process.env.NODE_ENV === "production",
+    })
 
     res.status(200).json({
         message: "User logged out Successfully"

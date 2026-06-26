@@ -1,7 +1,7 @@
 import axios from "axios"
 
 const api = axios.create({
-    baseURL: "http://localhost:3000",
+    baseURL: import.meta.env.VITE_API_URL || "/api",
     withCredentials: true,
 })
 
@@ -10,7 +10,7 @@ export const generateInterviewReport = async ({jobDescription, selfDescription, 
    formData.append("jobDescription", jobDescription)
    formData.append("selfDescription", selfDescription)
    formData.append("resume", resumeFile)
-   const response = await api.post("/api/interview/", formData, {
+   const response = await api.post("/interview/", formData, {
         headers: {
             "Content-Type":"multipart/form-data"
         }
@@ -20,18 +20,18 @@ export const generateInterviewReport = async ({jobDescription, selfDescription, 
 
 
 export const getInterviewReportsById = async (interviewId) => {
-    const response = await api.get(`/api/interview/report/${interviewId}`)
+    const response = await api.get(`/interview/report/${interviewId}`)
     return response.data
 }
 
 
 export const getAllInterviewReports = async () => {
-    const response = await api.get("/api/interview")
+    const response = await api.get("/interview")
     return response.data
 }
 
 export const downloadReportPdf = async (interviewId) => {
-    const response = await api.get(`/api/interview/report/${interviewId}/pdf`, {
+    const response = await api.get(`/interview/report/${interviewId}/pdf`, {
         responseType: "blob"
     })
     const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }))
@@ -45,7 +45,7 @@ export const downloadReportPdf = async (interviewId) => {
 }
 
 export const downloadResumePdf = async (interviewId) => {
-    const response = await api.get(`/api/interview/report/${interviewId}/resume-pdf`, {
+    const response = await api.get(`/interview/report/${interviewId}/resume-pdf`, {
         responseType: "blob"
     })
     const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }))

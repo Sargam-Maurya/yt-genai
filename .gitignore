@@ -1,8 +1,20 @@
 # Environment variables
 .env
 
-# Sensitive files — the "\#" escapes the hash so git doesn't treat it as a comment
-\# VvXLOmqMgrZZmXtZ.txt
-
 # Dependencies
 node_modules/
+
+# Build output
+Frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
