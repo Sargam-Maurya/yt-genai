@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { getInterviewReport } from '../services/interview.api'
+import { getInterviewReportsById } from '../services/interview.api'
 import '../style/interview.scss'
 
 const TABS = {
@@ -122,7 +122,7 @@ const Interview = () => {
   useEffect(() => {
     if (!interviewId) return
     setLoading(true)
-    getInterviewReport(interviewId).then((data) => {
+    getInterviewReportsById(interviewId).then((data) => {
       if (data?.interviewReport) {
         setReport(data.interviewReport)
       }
