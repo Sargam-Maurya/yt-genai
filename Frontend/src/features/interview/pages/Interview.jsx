@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
-import { getInterviewReportsById } from '../services/interview.api'
+import { useParams, useNavigate } from 'react-router-dom'
 import '../style/interview.scss'
+import { useInterview } from '../hooks/useInterview.js'
 
 const TABS = {
   TECHNICAL: 'technical',
@@ -115,19 +115,13 @@ const DUMMY_SKILL_GAPS = [
 
 const Interview = () => {
   const { interviewId } = useParams()
-  const [report, setReport] = useState(null)
   const [activeTab, setActiveTab] = useState(TABS.TECHNICAL)
-  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
+  const { report, getReportById, loading, downloadPdf, downloadResume } = useInterview()
 
   useEffect(() => {
     if (!interviewId) return
-    setLoading(true)
-    getInterviewReportsById(interviewId).then((data) => {
-      if (data?.interviewReport) {
-        setReport(data.interviewReport)
-      }
-      setLoading(false)
-    })
+    getReportById(interviewId)
   }, [interviewId])
 
   const questions = activeTab === TABS.TECHNICAL
@@ -141,6 +135,9 @@ const Interview = () => {
   return (
     <div className="interview">
       <aside className="interview__sidebar interview__sidebar--left">
+        <button className="interview__back-btn" onClick={() => navigate('/reports')}>
+          ← Reports
+        </button>
         <nav className="interview__nav">
           {Object.values(TABS).map((tab) => (
             <button
@@ -159,7 +156,7 @@ const Interview = () => {
           <p className="interview__placeholder">Loading...</p>
         ) : activeTab === TABS.ROADMAP ? (
           <div className="interview__content">
-            <h2 className="interview__content-title">Preparation Road Map</h2>
+            <h2 className="interview__content-title">Preparation Road map</h2>
             <div className="interview__plan">
               {plan.map((item, i) => (
                 <div key={i} className="interview__plan-card">
@@ -198,6 +195,28 @@ const Interview = () => {
       </main>
 
       <aside className="interview__sidebar interview__sidebar--right">
+        {report?.matchScore != null && (
+          <div className="interview__match-score">
+            <span className="interview__match-score-label">Match Score</span>
+            <span
+              className="interview__match-score-value"
+              style={{
+                color: report.matchScore >= 70 ? '#22c55e' : report.matchScore >= 40 ? '#f59e0b' : '#ef4444'
+              }}
+            >
+              {report.matchScore}%
+            </span>
+            <div className="interview__match-score-bar">
+              <div
+                className="interview__match-score-fill"
+                style={{
+                  width: `${Math.min(report.matchScore, 100)}%`,
+                  background: report.matchScore >= 70 ? '#22c55e' : report.matchScore >= 40 ? '#f59e0b' : '#ef4444'
+                }}
+              />
+            </div>
+          </div>
+        )}
         <div className="interview__tags">
           <h3 className="interview__tags-title">Skills Gaps</h3>
           {skillGaps.map((item, i) => (
@@ -214,6 +233,22 @@ const Interview = () => {
             </span>
           ))}
         </div>
+
+        <button
+          className="interview__download-btn"
+          onClick={() => downloadPdf(interviewId)}
+        >
+          📄 Report PDF
+        </button>
+
+        {report?.resume && (
+          <button
+            className="interview__download-btn interview__download-btn--resume"
+            onClick={() => downloadResume(interviewId)}
+          >
+            📝 Resume PDF
+          </button>
+        )}
       </aside>
     </div>
   )

@@ -54,6 +54,31 @@
     }
   }
 
+  &__back-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #888;
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    margin-bottom: 0.75rem;
+    width: 100%;
+    text-align: left;
+
+    &:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    @media (max-width: 768px) {
+      width: auto;
+    }
+  }
+
   &__nav {
     display: flex;
     flex-direction: column;
@@ -295,6 +320,79 @@
       letter-spacing: 0.5px;
       color: #888;
       margin-bottom: 0.25rem;
+    }
+  }
+
+  &__match-score {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+    &-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #888;
+      margin-bottom: 0.4rem;
+    }
+
+    &-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    &-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.06);
+      overflow: hidden;
+    }
+
+    &-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.6s ease;
+    }
+  }
+
+  &__download-btn {
+    width: 100%;
+    margin-top: 1.5rem;
+    padding: 0.65rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(192, 132, 252, 0.2);
+    background: rgba(192, 132, 252, 0.1);
+    color: #c084fc;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+
+    &:hover {
+      background: rgba(192, 132, 252, 0.2);
+      border-color: rgba(192, 132, 252, 0.35);
+    }
+
+    &--resume {
+      margin-top: 0.5rem;
+      border-color: rgba(96, 165, 250, 0.2);
+      background: rgba(96, 165, 250, 0.1);
+      color: #60a5fa;
+
+      &:hover {
+        background: rgba(96, 165, 250, 0.2);
+        border-color: rgba(96, 165, 250, 0.35);
+      }
     }
   }
 

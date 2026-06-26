@@ -1,6 +1,7 @@
 const express = require("express")
 const authMiddleware = require("../middlewares/auth.middleware")
 const interviewController = require("../controllers/interview.controller")
+const pdfController = require("../controllers/pdf.controller")
 const upload = require("../middlewares/file.middleware")
 
 const interviewRouter = express.Router()
@@ -15,5 +16,9 @@ interviewRouter.post("/", authMiddleware.authUser, upload.single("resume"), inte
 interviewRouter.get("/report/:interviewId", authMiddleware.authUser, interviewController.getInterviewReportController)
 
 interviewRouter.get("/", authMiddleware.authUser, interviewController.getAllInterviewReportsController)
+
+interviewRouter.get("/report/:interviewId/pdf", authMiddleware.authUser, pdfController.downloadReportPdfController)
+
+interviewRouter.get("/report/:interviewId/resume-pdf", authMiddleware.authUser, pdfController.downloadResumePdfController)
 
 module.exports = interviewRouter

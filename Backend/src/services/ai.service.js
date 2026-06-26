@@ -1,58 +1,114 @@
 const {GoogleGenAI} = require("@google/genai")
-const {z} = require("zod")
-const { zodToJsonSchema } = require("zod-to-json-schema");
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GOOGLE_GENAI_API_KEY
 })
 
-const interviewReportSchema = z.object({
-    matchScore: z.number().describe("The match score between the candidate and the job description, ranging from 0 to 100"),
-    technicalQuestions: z.array(z.object({
-        question: z.string().describe("The technical question can be asked in the interview"),
-        intention: z.string().describe("The intention of interviewer behind asking the technical question"),
-        answer: z.string().describe("How to answer this question, what points to cover, what to avoid, and how to answer in a way that impresses the interviewer")
-    })).describe("A list of technical questions that can be asked in the interview, along with their intention and answer"),
+const MODELS = ["gemini-3-flash-preview", "gemini-2.5-flash", "gemini-2.0-flash"]
 
-    behavioralQuestions: z.array(z.object({
-        question: z.string().describe("The behavioral question can be asked in the interview"),
-        intention: z.string().describe("The intention of interviewer behind asking the behavioral question"),    
-    answer: z.string().describe("How to answer this question, what points to cover, what to avoid, and how to answer in a way that impresses the interviewer")
-    })).describe("A list of behavioral questions that can be asked in the interview, along with their intention and answer"),
+const interviewResponseSchema = {
+    type: "object",
+    properties: {
+        matchScore: { type: "number", description: "The match score between the candidate and the job description, ranging from 0 to 100" },
+        technicalQuestions: {
+            type: "array", description: "A list of technical interview questions with intention and answer",
+            items: {
+                type: "object",
+                properties: {
+                    question: { type: "string", description: "The technical question" },
+                    intention: { type: "string", description: "Why the interviewer is asking this" },
+                    answer: { type: "string", description: "How to answer with key points and what to avoid" }
+                },
+                required: ["question", "intention", "answer"]
+            }
+        },
+        behavioralQuestions: {
+            type: "array", description: "A list of behavioral interview questions with intention and answer",
+            items: {
+                type: "object",
+                properties: {
+                    question: { type: "string", description: "The behavioral question" },
+                    intention: { type: "string", description: "Why the interviewer is asking this" },
+                    answer: { type: "string", description: "How to answer with key points and what to avoid" }
+                },
+                required: ["question", "intention", "answer"]
+            }
+        },
+        skillGaps: {
+            type: "array", description: "Skills the candidate is lacking",
+            items: {
+                type: "object",
+                properties: {
+                    skills: { type: "string", description: "The missing skill name" },
+                    severity: { type: "string", enum: ["low", "medium", "high"], description: "How critical this gap is" }
+                },
+                required: ["skills", "severity"]
+            }
+        },
+        preparationPlan: {
+            type: "array", description: "A day-by-day preparation roadmap",
+            items: {
+                type: "object",
+                properties: {
+                    day: { type: "string", description: "Time period (e.g. Week 1-2)" },
+                    focus: { type: "string", description: "The focus area for this period" },
+                    tasks: { type: "string", description: "Specific tasks to complete" }
+                },
+                required: ["day", "focus", "tasks"]
+            }
+        },
+        title: { type: "string", description: "The job title this report is for" }
+    },
+    required: ["matchScore", "technicalQuestions", "behavioralQuestions", "skillGaps", "preparationPlan", "title"]
+}
 
-    skillGaps: z.array(z.object({
-        skills: z.string().describe("The skill that the candidate is lacking"),
-        severity: z.enum(["low", "medium", "high"]).describe("The severity of the skill gap")        
-    })).describe("A list of skill gaps that the candidate has, along with their severity"),
-
-    preparationPlan: z.array(z.object({
-        day: z.string().describe("The day of the preparation plan"),
-        focus: z.string().describe("The focus of the preparation plan for that day"),
-        tasks: z.string().describe("The tasks to be completed for that day")
-    })).describe("A preparation plan for the candidate to follow, with focus and tasks for each day"),
-    
-    title: z.string().describe("The title of the job for which the interview report is generated"),
-
-})
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
 
 async function generateInterviewReport({resume, selfDescription, jobDescription}){
 
-    const prompt = `Generate an interview report for the candidate based on the following information:  
+    const prompt = `Generate an interview report for the candidate based on the following information:
     Resume: ${resume}
     Self-Description: ${selfDescription}
     Job-Description: ${jobDescription}
     `
 
-    const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt,
-        config:{
-            responseMimeType: "application/json",
-            responseSchema: zodToJsonSchema(interviewReportSchema),
+    let lastError = null
 
+    for (const model of MODELS) {
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                const response = await ai.models.generateContent({
+                    model,
+                    contents: prompt,
+                    config:{
+                        responseMimeType: "application/json",
+                        responseSchema: interviewResponseSchema,
+                    }
+                })
+
+                if (!response?.text) {
+                    throw new Error("AI returned empty response")
+                }
+
+                return JSON.parse(response.text)
+            } catch (err) {
+                lastError = err
+                const isOverload = err.message?.includes("503") || err.message?.includes("UNAVAILABLE") || err.message?.includes("429") || err.message?.includes("RESOURCE_EXHAUSTED")
+
+                if (isOverload && attempt < 3) {
+                    const delay = Math.pow(2, attempt) * 1000
+                    console.log(`Model ${model} overloaded (attempt ${attempt}), retrying in ${delay}ms...`)
+                    await sleep(delay)
+                } else if (!isOverload) {
+                    // Non-transient error — skip retries for this model
+                    break
+                }
+            }
         }
-    })
+    }
 
-    return JSON.parse(response.text)
+    throw lastError || new Error("All models exhausted")
 }
 module.exports = generateInterviewReport

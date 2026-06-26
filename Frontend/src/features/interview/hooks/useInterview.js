@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { getAllInterviewReports,generateInterviewReport, getInterviewReportsById } from "../services/interview.api";
+import { getAllInterviewReports,generateInterviewReport, getInterviewReportsById, downloadReportPdf, downloadResumePdf } from "../services/interview.api";
 import { InterviewContext } from "../interview.context";
 
 export const useInterview = () => {
@@ -16,6 +16,7 @@ export const useInterview = () => {
         try{
             const response = await generateInterviewReport({jobDescription, selfDescription, resumeFile})
             setReport(response.interviewReport)
+            return response
         }catch(error){
             console.log("Error generating interview report", error)
         }finally{
@@ -39,14 +40,30 @@ export const useInterview = () => {
         setLoading(true)
         try{
             const response = await getAllInterviewReports()
-            setReport(response.interviewReports)
+            setReports(response.interviewReports)
         }catch(error){
             console.log(error)
         }finally{
             setLoading(false)
         }
     }
-    return { loading, report, reports, generateReport, getReportById, getReports}
+
+    const downloadPdf = async (interviewId) => {
+        try {
+            await downloadReportPdf(interviewId)
+        } catch (error) {
+            console.error("Error downloading PDF:", error)
+        }
+    }
+
+    const downloadResume = async (interviewId) => {
+        try {
+            await downloadResumePdf(interviewId)
+        } catch (error) {
+            console.error("Error downloading resume PDF:", error)
+        }
+    }
+    return { loading, report, reports, generateReport, getReportById, getReports, downloadPdf, downloadResume }
 }
 
 
