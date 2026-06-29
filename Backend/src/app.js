@@ -23,9 +23,10 @@ if (process.env.NODE_ENV !== "test") {
 app.set("trust proxy", 1)
 
 // Rate limiting
+const isProd = process.env.NODE_ENV === "production"
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: isProd ? 200 : 1000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many requests, please try again later." },
@@ -35,7 +36,7 @@ app.use("/api/", limiter)
 // Stricter limiter for AI generation endpoint
 const generateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10,
+  max: isProd ? 10 : 50,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many generation requests. Please try again later." },
@@ -59,6 +60,9 @@ app.use(cors({
     },
     credentials: true
 }))
+
+// Health check — used by deployment platforms (Render, Railway, etc.)
+app.get("/health", (req, res) => res.json({ status: "ok", timestamp: new Date().toISOString() }))
 
 // require all the routes here
 const authRouter = require("./routes/auth.routes")
