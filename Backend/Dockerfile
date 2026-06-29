@@ -1,8 +1,8 @@
 # ---- Build Stage ----
 FROM node:22-slim AS builder
 
-# Prevent Puppeteer from downloading Chromium during npm install
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+# Prevent Puppeteer from downloading Chromium during npm install (v22+)
+ENV PUPPETEER_SKIP_DOWNLOAD=true
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Point Puppeteer to the system-installed Chromium
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
     PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Create app directory
