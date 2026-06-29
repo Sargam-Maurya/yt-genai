@@ -3,7 +3,7 @@
   "buildCommand": "vite build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://yt-genai-axhh.onrender.com/api/$1" },
+    { "source": "/api/(.*)", "destination": "https://yt-genai-vkjc.onrender.com/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
