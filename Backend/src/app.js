@@ -44,8 +44,19 @@ app.use("/api/interview/", generateLimiter)
 
 app.use(express.json({ limit: "5mb" }))
 app.use(cookieParser())
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "http://localhost:5173",
+  "http://localhost:4173",
+].filter(Boolean)
+
 app.use(cors({
-    origin: process.env.CLIENT_URL || "http://localhost:5173",
+    origin: (origin, cb) => {
+        // Allow requests with no origin (server-to-server, mobile apps, curl)
+        if (!origin) return cb(null, true)
+        if (allowedOrigins.includes(origin)) return cb(null, true)
+        cb(null, false)
+    },
     credentials: true
 }))
 
